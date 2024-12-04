@@ -128,7 +128,7 @@ WHERE "USER".id = "COACH".user_id
 AND "USER".name = 'Q太郎';
 
 -- 3-4 刪除：新增一個專長 空中瑜伽 至 SKILL 資料表，之後刪除此專長。
-INSERT INTO "SKILL" (name) VALUES ("空中瑜珈");
+INSERT INTO "SKILL" (name) VALUES ('空中瑜珈');
 DELETE FROM "SKILL" WHERE name = '空中瑜珈';
 
 
@@ -148,6 +148,11 @@ DELETE FROM "SKILL" WHERE name = '空中瑜珈';
     -- 5. 授課結束時間`end_at`設定為2024-11-25 16:00:00
     -- 6. 最大授課人數`max_participants` 設定為10
     -- 7. 授課連結設定`meeting_url`為 https://test-meeting.test.io
+INSERT INTO "COURSE" (user_id, skill_id, name, start_at, end_at, max_participants, meeting_url)
+SELECT "USER".id, (SELECT id FROM "SKILL" WHERE name = '重訓'), 
+    '重訓基礎課', '2024-11-25 14:00:00', '2024-11-25 16:00:00', 10, 'https://test-meeting.test.io'
+FROM "USER"
+WHERE "USER".name = '李燕容';
 
 
 -- ████████  █████   █    █████ 
@@ -167,17 +172,46 @@ DELETE FROM "SKILL" WHERE name = '空中瑜珈';
         -- 1. 預約人設為 `好野人`
         -- 2. 預約時間`booking_at` 設為2024-11-24 16:00:00
         -- 3. 狀態`status` 設定為即將授課
+INSERT INTO "COURSE_BOOKING" (user_id, course_id, booking_at, status)
+SELECT (SELECT id FROM "USER" WHERE name = '王小明'), "COURSE".id, '2024-11-24 16:00:00', '即將授課'
+FROM "COURSE"
+INNER JOIN "USER" ON "USER".id = "COURSE".user_id
+WHERE "USER".name = '李燕容';
+INSERT INTO "COURSE_BOOKING" (user_id, course_id, booking_at, status)
+SELECT (SELECT id FROM "USER" WHERE name = '好野人'), "COURSE".id, '2024-11-24 16:00:00', '即將授課'
+FROM "COURSE"
+INNER JOIN "USER" ON "USER".id = "COURSE".user_id
+WHERE "USER".name = '李燕容';
 
 -- 5-2. 修改：`王小明`取消預約 `李燕容` 的課程，請在`COURSE_BOOKING`更新該筆預約資料：
     -- 1. 取消預約時間`cancelled_at` 設為2024-11-24 17:00:00
     -- 2. 狀態`status` 設定為課程已取消
+UPDATE "COURSE_BOOKING" SET
+	cancelled_at = '2024-11-24 17:00:00', status = '課程已取消'
+WHERE id = (
+    SELECT B.id
+    FROM "COURSE_BOOKING" AS B
+    INNER JOIN "COURSE" AS C ON C.id = B.course_id
+    INNER JOIN "USER" AS U1 ON U1.id = C.user_id
+    INNER JOIN "USER" AS U2 ON U2.id = B.user_id
+    WHERE U1.name = '李燕容'
+    AND U2.name = '王小明'
+);
 
 -- 5-3. 新增：`王小明`再次預約 `李燕容`   的課程，請在`COURSE_BOOKING`新增一筆資料：
     -- 1. 預約人設為`王小明`
     -- 2. 預約時間`booking_at` 設為2024-11-24 17:10:25
     -- 3. 狀態`status` 設定為即將授課
+INSERT INTO "COURSE_BOOKING" (user_id, course_id, booking_at, status)
+SELECT (SELECT id FROM "USER" WHERE name = '王小明'), "COURSE".id, '2024-11-24 17:10:25', '即將授課'
+FROM "COURSE"
+INNER JOIN "USER" ON "USER".id = "COURSE".user_id
+WHERE "USER".name = '李燕容';
 
 -- 5-4. 查詢：取得王小明所有的預約紀錄，包含取消預約的紀錄
+SELECT * FROM "COURSE_BOOKING"
+INNER JOIN "USER" ON "USER".id = "COURSE_BOOKING".user_id
+WHERE "USER".name = '王小明';
 
 -- 5-5. 修改：`王小明` 現在已經加入直播室了，請在`COURSE_BOOKING`更新該筆預約資料（請注意，不要更新到已經取消的紀錄）：
     -- 1. 請在該筆預約記錄他的加入直播室時間 `join_at` 設為2024-11-25 14:01:59
