@@ -302,3 +302,4 @@ SELECT COUNT(DISTINCT user_id) as 預約會員人數
 FROM "COURSE_BOOKING"
 WHERE booking_at >= '2024-11-01 00:00:00' AND booking_at <= '2024-11-30 23:59:59'
 AND status <> '課程已取消';
+
